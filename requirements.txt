@@ -1,0 +1,2 @@
+wiktionaryparser==0.0.92
+Mastodon.py==1.3.1
