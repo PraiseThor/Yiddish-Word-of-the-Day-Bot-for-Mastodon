@@ -1,6 +1,6 @@
 from wiktionaryparser import WiktionaryParser
 from mastodon import Mastodon
-import json, time
+import json, schedule, time
 
 # Register app - only once!
 '''
@@ -29,7 +29,6 @@ mastodon = Mastodon(
     api_base_url = 'https://botsin.space'
 )
 
-
 def define_word(word):
 	parser = WiktionaryParser()
 	json_word = parser.fetch(word, 'yiddish')
@@ -43,42 +42,51 @@ def define_word(word):
 		#print("json_word="+str(json_word))
 		#print(type(json_word))
 		return False
+
+
+def job():	
+
+	#happens once
+	word_file=open("no-nikkud-test.txt","r")
+	iter_file=open("counter.txt","r+")
+	i=int(float(iter_file.read()))
+	word_list=word_file.readlines()
+	localtime=time.localtime(time.time())
+
+
+	if i==len(word_list)-1: #if the program reaches the end of list, returns to the begining
+		i=-1
+		print(i)
+		iter_file.seek(0)
+		iter_file.truncate()
+		iter_file.write(str(i))
+
+	while i<len(word_list)-1:
 	
+		i+=1
+		print(i)
+		word=word_list[i].strip('\n')
+		iter_file.seek(0)
+		iter_file.truncate()
+		iter_file.write(str(i))	
 
-#happens once
-word_file=open("no-nikkud-test.txt","r")
-iter_file=open("counter.txt","r+")
-i=int(float(iter_file.read()))
-word_list=word_file.readlines()
-localtime=time.localtime(time.time())
-
-
-if i==len(word_list)-1: #if the program reaches the end of list, returns to the begining
-	i=-1
-	print(i)
-	iter_file.seek(0)
-	iter_file.truncate()
-	iter_file.write(str(i))
-
-while i<len(word_list)-1:
-	
-	i+=1
-	print(i)
-	word=word_list[i].strip('\n')
-	iter_file.seek(0)
-	iter_file.truncate()
-	iter_file.write(str(i))	
-
-	if not bool(define_word(word)):
-		print("no definition for "+word)
-		continue
-	else:
-		msg=str(localtime.tm_mon)+"/"+str(localtime.tm_mday)+" - "+define_word(word)[0]["text"]
-		print(msg)
-		mastodon.toot(msg)
-		#print(define_word(word)[0]["partOfSpeech"])
-	
+		if not bool(define_word(word)):
+			print("no definition for "+word)
+			continue
+		else:
+			msg=str(localtime.tm_mon)+"/"+str(localtime.tm_mday)+" - "+define_word(word)[0]["text"]
+			print(msg)
+			mastodon.toot(msg)
+			#print(define_word(word)[0]["partOfSpeech"])
+			break
 		break
-	break
 
-iter_file.close()
+		iter_file.close()
+
+schedule.every().day.at("13:00").do(job)
+
+while 1:
+	schedule.run_pending()
+	time.sleep(60)
+
+		
